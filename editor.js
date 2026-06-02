@@ -2,7 +2,7 @@
   const storageKey = "aiResourceEditorData";
   const adminSessionKey = "aiResourceAdminSession";
   const adminUser = "admin";
-  const adminPasswordHash = "c0e9f9e6cdbdf960c50893c70a0f787c1dbbcf6753e622d15d80be417a083cb2";
+  const adminPasswordHash = "dd4fa27e";
 
   const collectionLabels = {
     tools: "AI工具",
@@ -143,15 +143,16 @@
     if (els.loginStatus) els.loginStatus.textContent = message;
   }
 
-  async function sha256(value) {
-    const bytes = new TextEncoder().encode(value);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map((byte) => byte.toString(16).padStart(2, "0"))
-      .join("");
+  function hashPassword(value) {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
   }
 
-  async function handleLogin(event) {
+  function handleLogin(event) {
     event.preventDefault();
     const formData = new FormData(els.loginForm);
     const username = String(formData.get("username") || "").trim();
@@ -162,14 +163,8 @@
       return;
     }
 
-    try {
-      const passwordHash = await sha256(password);
-      if (passwordHash !== adminPasswordHash) {
-        showLogin("账号或密码不正确。");
-        return;
-      }
-    } catch (error) {
-      showLogin("当前浏览器不支持安全校验，请用本地服务或 HTTPS 打开后台。");
+    if (hashPassword(password) !== adminPasswordHash) {
+      showLogin("账号或密码不正确。");
       return;
     }
 
