@@ -99,15 +99,35 @@
 
   function loadPreviewData() {
     try {
-      const raw = localStorage.getItem(storageKey);
+      const raw = storageGet(storageKey);
       return raw ? JSON.parse(raw) : null;
     } catch (error) {
       return null;
     }
   }
 
+  function getStorage() {
+    try {
+      return window.localStorage || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function storageGet(key) {
+    return getStorage()?.getItem(key) || null;
+  }
+
+  function storageSet(key, value) {
+    getStorage()?.setItem(key, value);
+  }
+
+  function storageRemove(key) {
+    getStorage()?.removeItem(key);
+  }
+
   function isAdminLoggedIn() {
-    return localStorage.getItem(adminSessionKey) === "active";
+    return storageGet(adminSessionKey) === "active";
   }
 
   function showEditor() {
@@ -153,7 +173,7 @@
       return;
     }
 
-    localStorage.setItem(adminSessionKey, "active");
+    storageSet(adminSessionKey, "active");
     els.loginForm.reset();
     showEditor();
     renderAll();
@@ -161,7 +181,7 @@
   }
 
   function handleLogout() {
-    localStorage.removeItem(adminSessionKey);
+    storageRemove(adminSessionKey);
     showLogin("已退出管理员后台。");
   }
 
@@ -443,7 +463,7 @@
   function savePreview() {
     saveFormToState();
     state.data.updatedAt = new Date().toISOString().slice(0, 10);
-    localStorage.setItem(storageKey, JSON.stringify(state.data));
+    storageSet(storageKey, JSON.stringify(state.data));
     setStatus("已保存到本机预览，返回前台即可查看。");
   }
 
@@ -465,7 +485,7 @@
   function clearPreview() {
     const ok = window.confirm("确定清除本机预览数据，恢复读取原始内容吗？");
     if (!ok) return;
-    localStorage.removeItem(storageKey);
+    storageRemove(storageKey);
     state.data = structuredClone(window.AI_RESOURCE_DATA);
     state.selectedIndex = 0;
     renderAll();
