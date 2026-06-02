@@ -49,6 +49,7 @@
       ["audience", "适合岗位", "roles"],
       ["tools", "涉及工具", "list"],
       ["duration", "预计时长", "text"],
+      ["videoUrl", "学习视频链接", "url"],
       ["summary", "教程简介", "textarea"],
       ["steps", "步骤", "list"],
       ["updatedAt", "最后更新", "date"]
@@ -394,6 +395,7 @@
         audience: [role],
         tools: ["ChatGPT"],
         duration: "30分钟",
+        videoUrl: "",
         summary: "教程简介",
         steps: ["步骤1"],
         updatedAt: today
