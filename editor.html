@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>站长编辑后台｜AI教材资源导航</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="editor.css">
+    <script defer src="content-data.js"></script>
+    <script defer src="editor.js"></script>
+  </head>
+  <body class="editor-body">
+    <header class="editor-header">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">AI</span>
+        <span>站长编辑后台</span>
+      </a>
+      <nav class="main-nav" aria-label="编辑后台导航">
+        <a href="index.html">返回前台</a>
+        <a href="index.html#tools">工具库</a>
+        <a href="index.html#industries">专业行业</a>
+        <button class="admin-logout" type="button" id="admin-logout" hidden>退出登录</button>
+      </nav>
+    </header>
+
+    <main class="editor-login" id="admin-login-panel">
+      <section class="login-card" aria-labelledby="admin-login-title">
+        <p class="eyebrow">站长入口</p>
+        <h1 id="admin-login-title">管理员登录后编辑内容</h1>
+        <p>这个后台不在前台页面展示。登录后可以编辑工具、行业、课程、路线和对比内容。</p>
+        <form id="admin-login-form" class="admin-login-form">
+          <label>
+            <span>管理员账号</span>
+            <input name="username" type="text" autocomplete="username" required>
+          </label>
+          <label>
+            <span>管理员密码</span>
+            <input name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="primary-action" type="submit">进入编辑后台</button>
+        </form>
+        <p class="status-text" id="admin-login-status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <main class="editor-app" id="editor-app" hidden>
+      <section class="editor-hero">
+        <div>
+          <p class="eyebrow">内容管理</p>
+          <h1>不用改代码，直接编辑网站内容</h1>
+          <p>先在这里改内容，点“保存到本机预览”后返回前台查看效果。确认无误后导出新版内容文件。</p>
+        </div>
+        <div class="editor-actions">
+          <button class="primary-action" type="button" id="save-preview">保存到本机预览</button>
+          <button class="secondary-action" type="button" id="export-data">导出 content-data.js</button>
+          <button class="secondary-action danger-action" type="button" id="clear-preview">清除预览</button>
+        </div>
+      </section>
+
+      <section class="editor-shell" aria-label="内容编辑区">
+        <aside class="editor-sidebar">
+          <label class="editor-label" for="collection-select">编辑内容</label>
+          <select id="collection-select">
+            <option value="tools">AI工具</option>
+            <option value="industries">专业行业</option>
+            <option value="tutorials">课程教程</option>
+            <option value="routes">岗位路线</option>
+            <option value="comparisons">工具对比</option>
+          </select>
+
+          <div class="editor-list-actions">
+            <button class="small-action" type="button" id="add-item">新增</button>
+            <button class="small-action" type="button" id="duplicate-item">复制</button>
+            <button class="small-action danger-action" type="button" id="delete-item">删除</button>
+          </div>
+
+          <input class="editor-search" id="editor-search" type="search" placeholder="搜索当前列表">
+          <div class="editor-list" id="editor-list"></div>
+        </aside>
+
+        <section class="editor-form-panel">
+          <div class="editor-form-heading">
+            <div>
+              <p class="eyebrow" id="form-eyebrow">AI工具</p>
+              <h2 id="form-title">正在载入</h2>
+            </div>
+            <p id="editor-status" class="status-text" aria-live="polite"></p>
+          </div>
+
+          <form id="item-form" class="editor-form"></form>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
