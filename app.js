@@ -240,11 +240,21 @@
       ? tutorials.map(renderCourseCard).join("")
       : '<div class="empty-state">没有找到匹配的课程。建议切换课程类型或减少关键词。</div>';
     els.tutorialCount.textContent = `当前显示 ${tutorials.length} / ${data.tutorials.length} 篇教程模板`;
+
+    els.courseGrid.querySelectorAll("[data-course-id]").forEach((card) => {
+      card.addEventListener("click", () => openCourseModal(card.dataset.courseId));
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openCourseModal(card.dataset.courseId);
+        }
+      });
+    });
   }
 
   function renderCourseCard(tutorial) {
     return `
-      <article class="course-card">
+      <article class="course-card course-card-link" role="button" tabindex="0" data-course-id="${escapeHtml(tutorial.id)}">
         <div class="course-meta">
           <span class="type-pill">${escapeHtml(tutorial.type)}</span>
           <span class="level-pill">${escapeHtml(tutorial.level)}</span>
@@ -256,6 +266,7 @@
           <li>时长：${escapeHtml(tutorial.duration)}</li>
           <li>产出：${escapeHtml(tutorial.steps[tutorial.steps.length - 1])}</li>
         </ul>
+        <span class="course-enter">进入学习视频</span>
       </article>
     `;
   }
@@ -387,6 +398,89 @@
     els.modal.hidden = false;
     document.body.classList.add("modal-open");
     els.modal.querySelector(".modal-close").focus();
+  }
+
+  function openCourseModal(tutorialId) {
+    const tutorial = data.tutorials.find((item) => item.id === tutorialId);
+    if (!tutorial) return;
+
+    const audienceNames = tutorial.audience.map((role) => roleMap.get(role)?.name || role);
+    els.modalContent.innerHTML = `
+      <div class="modal-body course-learning-page">
+        <span class="category-pill">学习视频</span>
+        <h2 id="modal-title">${escapeHtml(tutorial.title)}</h2>
+        <p class="modal-summary">${escapeHtml(tutorial.summary)}</p>
+
+        <div class="course-learning-layout">
+          ${renderCourseVideo(tutorial)}
+          <aside class="course-study-card">
+            <h3>学习信息</h3>
+            <dl class="course-info-list">
+              <div>
+                <dt>课程类型</dt>
+                <dd>${escapeHtml(tutorial.type)} · ${escapeHtml(tutorial.level)}</dd>
+              </div>
+              <div>
+                <dt>预计时长</dt>
+                <dd>${escapeHtml(tutorial.duration)}</dd>
+              </div>
+              <div>
+                <dt>适合人群</dt>
+                <dd>${escapeHtml(audienceNames.join("、"))}</dd>
+              </div>
+              <div>
+                <dt>使用工具</dt>
+                <dd>${escapeHtml(tutorial.tools.join("、"))}</dd>
+              </div>
+            </dl>
+          </aside>
+        </div>
+
+        <section class="course-steps-panel">
+          <div class="section-heading compact-heading">
+            <div>
+              <p class="eyebrow">学习路径</p>
+              <h3>跟着视频完成这几步</h3>
+            </div>
+            <span class="level-pill">更新：${escapeHtml(tutorial.updatedAt)}</span>
+          </div>
+          <ol class="course-step-list">
+            ${tutorial.steps.map((step, index) => `<li><span>${String(index + 1).padStart(2, "0")}</span><p>${escapeHtml(step)}</p></li>`).join("")}
+          </ol>
+        </section>
+      </div>
+    `;
+
+    els.modal.hidden = false;
+    document.body.classList.add("modal-open");
+    els.modal.querySelector(".modal-close").focus();
+  }
+
+  function renderCourseVideo(tutorial) {
+    const videoUrl = tutorial.videoUrl || "";
+    if (videoUrl) {
+      return `
+        <div class="course-video-frame has-video">
+          <div>
+            <span class="play-mark" aria-hidden="true">▶</span>
+            <strong>${escapeHtml(tutorial.title)}</strong>
+            <p>已配置学习视频链接，点击下方按钮打开观看。</p>
+            <a class="primary-action" href="${escapeHtml(videoUrl)}" target="_blank" rel="noreferrer">打开学习视频</a>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="course-video-frame">
+        <div>
+          <span class="play-mark" aria-hidden="true">▶</span>
+          <strong>${escapeHtml(tutorial.title)}</strong>
+          <p>这里预留给创作者视频。后续可在后台给本课程添加真实视频链接，也可以接入创作者投稿审核后的视频。</p>
+          <a class="secondary-action" href="#creator-center" data-close-modal>去创作者中心</a>
+        </div>
+      </div>
+    `;
   }
 
   function renderInstallGuide(tool) {
