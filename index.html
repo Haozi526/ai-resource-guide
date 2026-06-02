@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI教材资源导航｜AI工具百科、课程合集、岗位使用指南</title>
+    <meta name="description" content="面向学生、电商、职场、设计、运营和开发者的AI教材资源整合网站，提供AI工具百科、注册使用流程、岗位路线、课程合集和工具对比。">
+    <meta name="keywords" content="AI工具,AI教程,ChatGPT注册,AI课程,电商AI,学生AI工具,职场AI,AI大模型">
+    <meta property="og:title" content="AI教材资源导航">
+    <meta property="og:description" content="AI工具百科、课程合集、岗位AI使用指南，一站式整理。">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="content-data.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="community.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#tools">跳到工具库</a>
+
+    <header class="site-header" aria-label="主导航">
+      <a class="brand" href="#top" aria-label="AI教材资源导航首页">
+        <span class="brand-mark" aria-hidden="true">AI</span>
+        <span>AI教材资源导航</span>
+      </a>
+      <nav class="main-nav" aria-label="页面区域">
+        <a href="#tools">工具库</a>
+        <a href="#courses">课程</a>
+        <a href="#routes">岗位路线</a>
+        <a href="#industries">专业行业</a>
+        <a href="#creator-center" data-community-link="creator">创作者中心</a>
+        <a href="#community">社区</a>
+        <a href="#compare">对比</a>
+        <a href="#operate">维护</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-overlay"></div>
+        <div class="container hero-inner">
+          <p class="eyebrow">AI工具百科 · 课程合集 · 岗位指南</p>
+          <h1 id="hero-title">找到对应AI工具，点安装教程照着做</h1>
+          <p class="hero-copy">每个工具卡片都有官网、安装教程和详情说明。新手先按工具安装，进阶再看岗位路线和专业行业用法。</p>
+
+          <form class="hero-search" role="search" aria-label="搜索AI工具、岗位和教程">
+            <label class="sr-only" for="global-search">搜索关键词</label>
+            <input id="global-search" type="search" placeholder="搜索：ChatGPT注册、电商AI、PPT、论文、视频生成">
+            <button type="button" id="clear-search" aria-label="清空搜索">清空</button>
+          </form>
+
+          <div class="hero-stats" aria-label="内容规模">
+            <div>
+              <strong id="stat-tools">0</strong>
+              <span>个AI工具</span>
+            </div>
+            <div>
+              <strong id="stat-routes">0</strong>
+              <span>条岗位路线</span>
+            </div>
+            <div>
+              <strong id="stat-tutorials">0</strong>
+              <span>篇教程模板</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-tools" id="tools" aria-labelledby="tools-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">工具百科</p>
+              <h2 id="tools-title">按用途和岗位筛选AI工具</h2>
+            </div>
+            <p id="tool-count" class="section-note">正在载入内容</p>
+          </div>
+
+          <div class="filter-panel" aria-label="工具筛选">
+            <div>
+              <p class="filter-label">用途</p>
+              <div class="chip-row" id="category-filters"></div>
+            </div>
+            <div>
+              <p class="filter-label">岗位</p>
+              <div class="chip-row" id="role-filters"></div>
+            </div>
+          </div>
+
+          <div class="tool-grid" id="tool-grid"></div>
+        </div>
+      </section>
+
+      <section class="section section-courses" id="courses" aria-labelledby="courses-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">课程合集</p>
+              <h2 id="courses-title">从入门到岗位案例的内容框架</h2>
+            </div>
+            <p id="tutorial-count" class="section-note">正在载入课程</p>
+          </div>
+          <div class="filter-panel compact" aria-label="课程筛选">
+            <p class="filter-label">类型</p>
+            <div class="chip-row" id="tutorial-filters"></div>
+          </div>
+          <div class="course-grid" id="course-grid"></div>
+        </div>
+      </section>
+
+      <section class="section" id="routes" aria-labelledby="routes-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">岗位路线</p>
+              <h2 id="routes-title">不同人群的AI学习路径</h2>
+            </div>
+            <p class="section-note">先覆盖高频岗位，后续按搜索词继续补充。</p>
+          </div>
+          <div class="route-grid" id="route-grid"></div>
+        </div>
+      </section>
+
+      <section class="section section-industries" id="industries" aria-labelledby="industries-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">专业行业</p>
+              <h2 id="industries-title">电气、机械、自动化等垂直行业AI用法</h2>
+            </div>
+            <p id="industry-count" class="section-note">面向专业从业者，强调资料核验、标准约束和工程安全。</p>
+          </div>
+          <div class="industry-grid" id="industry-grid"></div>
+        </div>
+      </section>
+
+      <section class="section section-community" id="community" aria-labelledby="community-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">交流社区</p>
+              <h2 id="community-title">提问、评论、看视频教程、支持创作者</h2>
+            </div>
+            <p class="section-note">当前是可演示的本地原型，真实上线时需要后端账号、内容审核、视频存储和支付接口。</p>
+          </div>
+
+          <div class="community-shell">
+            <aside class="community-panel" aria-label="社区账号">
+              <div class="member-card" id="member-card"></div>
+              <div class="community-stats" id="community-stats"></div>
+              <p class="community-warning">打赏按钮现在只记录演示金额，不会产生真实付款。</p>
+            </aside>
+
+            <div class="community-main">
+              <div class="community-tabs" role="tablist" aria-label="社区功能">
+                <button type="button" class="community-tab is-active" data-community-tab="questions">问答广场</button>
+                <button type="button" class="community-tab" data-community-tab="videos">视频教程</button>
+                <button type="button" class="community-tab" data-community-tab="creator">创作者中心</button>
+              </div>
+
+              <section class="community-view is-active" id="community-view-questions" aria-label="问答广场">
+                <form class="community-compose" id="question-form">
+                  <div class="field-row">
+                    <label>
+                      <span>问题标题</span>
+                      <input name="title" type="text" placeholder="例如：电商详情页用哪个AI工具更合适？" required>
+                    </label>
+                    <label>
+                      <span>分类</span>
+                      <select name="tag">
+                        <option value="新手提问">新手提问</option>
+                        <option value="工具选择">工具选择</option>
+                        <option value="岗位用法">岗位用法</option>
+                        <option value="账号注册">账号注册</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    <span>补充说明</span>
+                    <textarea name="body" rows="4" placeholder="把你的使用场景、遇到的问题、希望别人怎么帮你写清楚。" required></textarea>
+                  </label>
+                  <button class="primary-action" type="submit">发布问题</button>
+                </form>
+
+                <div class="community-feed" id="community-feed"></div>
+              </section>
+
+              <section class="community-view" id="community-view-videos" aria-label="视频教程">
+                <div class="video-grid" id="video-grid"></div>
+              </section>
+
+              <span class="section-anchor" id="creator-center" aria-hidden="true"></span>
+              <section class="community-view" id="community-view-creator" aria-label="创作者中心">
+                <div class="creator-dashboard" id="creator-dashboard"></div>
+                <div class="creator-submissions" id="creator-submissions"></div>
+
+                <form class="community-compose" id="video-form">
+                  <div class="creator-form-heading">
+                    <div>
+                      <p class="eyebrow">继续投稿</p>
+                      <h3>发布新的视频教程</h3>
+                    </div>
+                    <p>建议标题直接写清楚工具、岗位和结果，例如“电气工程师用Kimi整理设备手册”。</p>
+                  </div>
+                  <div class="field-row">
+                    <label>
+                      <span>视频标题</span>
+                      <input name="title" type="text" placeholder="例如：10分钟学会用Kimi整理论文资料" required>
+                    </label>
+                    <label>
+                      <span>适合人群</span>
+                      <select name="audience">
+                        <option value="学生">学生</option>
+                        <option value="电商">电商</option>
+                        <option value="职场">职场</option>
+                        <option value="运营">运营</option>
+                        <option value="设计">设计</option>
+                        <option value="程序员">程序员</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    <span>视频链接</span>
+                    <input name="url" type="url" placeholder="粘贴B站、抖音、视频号或网盘链接">
+                  </label>
+                  <label>
+                    <span>视频简介</span>
+                    <textarea name="description" rows="4" placeholder="写清楚能学到什么、适合谁、需要哪些工具。" required></textarea>
+                  </label>
+                  <button class="primary-action" type="submit">发布视频教程</button>
+                </form>
+              </section>
+
+              <p class="status-text" id="community-status" aria-live="polite"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-compare" id="compare" aria-labelledby="compare-title">
+        <div class="container">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">对比页面</p>
+              <h2 id="compare-title">适合做长尾搜索的工具对比</h2>
+            </div>
+            <p class="section-note">每组都可以扩展成独立文章。</p>
+          </div>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>对比主题</th>
+                  <th>适合搜索词</th>
+                  <th>结论方向</th>
+                </tr>
+              </thead>
+              <tbody id="comparison-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-operate" id="operate" aria-labelledby="operate-title">
+        <div class="container operate-layout">
+          <div>
+            <p class="eyebrow">更新方式</p>
+            <h2 id="operate-title">一个人也能维护的内容节奏</h2>
+            <p class="operate-copy">内容先从表格化字段开始：工具名称、官网、注册方式、适合岗位、使用场景、优缺点、替代工具、更新时间和来源。</p>
+            <div class="action-row">
+              <button class="primary-action" type="button" id="download-csv">下载工具表格</button>
+              <button class="secondary-action" type="button" id="copy-template">复制更新模板</button>
+            </div>
+            <p class="status-text" id="action-status" aria-live="polite"></p>
+          </div>
+          <div class="operate-board" aria-label="阶段目标">
+            <div>
+              <span>网站内容目标</span>
+              <strong id="goal-tools">50 / 50</strong>
+            </div>
+            <div>
+              <span>岗位路线目标</span>
+              <strong id="goal-routes">10 / 10</strong>
+            </div>
+            <div>
+              <span>教程模板目标</span>
+              <strong id="goal-tutorials">20 / 20</strong>
+            </div>
+            <div>
+              <span>下一阶段</span>
+              <strong>微信小程序</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="modal" id="tool-modal" hidden aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div class="modal-backdrop" data-close-modal></div>
+      <article class="modal-panel">
+        <button class="modal-close" type="button" data-close-modal aria-label="关闭详情">×</button>
+        <div id="modal-content"></div>
+      </article>
+    </aside>
+
+    <aside class="modal" id="auth-modal" hidden aria-labelledby="auth-title" role="dialog" aria-modal="true">
+      <div class="modal-backdrop" data-close-auth></div>
+      <article class="modal-panel auth-panel">
+        <button class="modal-close" type="button" data-close-auth aria-label="关闭登录注册">×</button>
+        <div class="modal-body">
+          <p class="eyebrow">社区账号</p>
+          <h2 id="auth-title">登录或注册</h2>
+          <p class="modal-summary">演示版只在本机保存昵称和身份，真实上线需要后端账号系统。</p>
+          <form class="auth-form" id="auth-form">
+            <label>
+              <span>昵称</span>
+              <input name="name" type="text" placeholder="例如：AI学习者" required>
+            </label>
+            <label>
+              <span>邮箱</span>
+              <input name="email" type="email" placeholder="name@example.com" required>
+            </label>
+            <label>
+              <span>身份</span>
+              <select name="role">
+                <option value="学生">学生</option>
+                <option value="电商">电商</option>
+                <option value="职场">职场</option>
+                <option value="运营">运营</option>
+                <option value="创作者">创作者</option>
+              </select>
+            </label>
+            <button class="primary-action" type="submit">进入社区</button>
+          </form>
+        </div>
+      </article>
+    </aside>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>AI教材资源导航 · 内容需按官网持续核验</p>
+        <p>建议上线后提交百度搜索资源平台与 Google Search Console。</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
