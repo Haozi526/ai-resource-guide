@@ -1,8 +1,13 @@
 (function () {
+  const platform = window.AI_CREATOR_PLATFORM;
+
+  if (!platform) return;
+
   const storageKeys = {
     user: "aiResourceCommunityUser",
     posts: "aiResourceCommunityPosts",
-    videos: "aiResourceCommunityVideos"
+    videos: "aiResourceCommunityVideos",
+    phoneCode: "aiResourcePhoneCode"
   };
 
   const defaultPosts = [
@@ -52,13 +57,20 @@
     {
       id: "video-1",
       title: "15分钟学会用AI做电商详情页",
+      creatorId: "demo-creator-1",
       creator: "南风电商",
+      creatorPhone: "13800138001",
       audience: "电商",
       tool: "豆包 + Canva AI",
       description: "从商品卖点、标题组合、详情页结构到活动海报，一次跑完整个流程。",
-      url: "",
-      status: "已发布",
+      tags: ["电商", "详情页"],
+      videoFileId: "",
+      videoAppId: "",
+      videoUrl: "",
+      coverImage: "",
+      status: platform.STATUS.APPROVED,
       createdAt: "2026-06-02",
+      reviewedAt: "2026-06-02",
       views: 268,
       tips: 88,
       likes: 126
@@ -66,13 +78,20 @@
     {
       id: "video-2",
       title: "学生论文资料整理工作流",
+      creatorId: "demo-creator-2",
       creator: "AI课代表",
+      creatorPhone: "13800138002",
       audience: "学生",
       tool: "Kimi + Perplexity",
       description: "演示如何检索资料线索、整理文献摘要、生成提纲，并保留人工核验步骤。",
-      url: "",
-      status: "已发布",
+      tags: ["学生", "论文"],
+      videoFileId: "",
+      videoAppId: "",
+      videoUrl: "",
+      coverImage: "",
+      status: platform.STATUS.APPROVED,
       createdAt: "2026-06-02",
+      reviewedAt: "2026-06-02",
       views: 196,
       tips: 66,
       likes: 94
@@ -80,13 +99,20 @@
     {
       id: "video-3",
       title: "用Cursor读懂一个前端项目",
+      creatorId: "demo-creator-3",
       creator: "代码讲师",
+      creatorPhone: "13800138003",
       audience: "程序员",
       tool: "Cursor + DeepSeek",
       description: "适合刚开始用AI编程的人，重点讲怎么限定改动范围和检查AI生成代码。",
-      url: "",
-      status: "已发布",
+      tags: ["程序员", "AI编程"],
+      videoFileId: "",
+      videoAppId: "",
+      videoUrl: "",
+      coverImage: "",
+      status: platform.STATUS.APPROVED,
       createdAt: "2026-06-02",
+      reviewedAt: "2026-06-02",
       views: 322,
       tips: 108,
       likes: 151
@@ -97,7 +123,7 @@
     activeTab: "questions",
     user: load(storageKeys.user, null),
     posts: load(storageKeys.posts, defaultPosts),
-    videos: load(storageKeys.videos, defaultVideos)
+    videos: load(storageKeys.videos, window.AI_RESOURCE_DATA?.videoSubmissions || defaultVideos)
   };
 
   const els = {
@@ -111,7 +137,12 @@
     questionForm: document.getElementById("question-form"),
     videoForm: document.getElementById("video-form"),
     authModal: document.getElementById("auth-modal"),
-    authForm: document.getElementById("auth-form")
+    authForm: document.getElementById("auth-form"),
+    sendCode: document.getElementById("send-phone-code"),
+    uploadProgress: document.getElementById("creator-upload-progress"),
+    uploadLabel: document.getElementById("creator-upload-label"),
+    uploadPercent: document.getElementById("creator-upload-percent"),
+    uploadBar: document.getElementById("creator-upload-bar")
   };
 
   if (!els.memberCard) return;
@@ -144,7 +175,7 @@
       if (els.communityStatus.textContent === message) {
         els.communityStatus.textContent = "";
       }
-    }, 4200);
+    }, 5200);
   }
 
   function today() {
@@ -158,8 +189,100 @@
   function requireLogin() {
     if (state.user) return true;
     openAuthModal();
-    setStatus("请先登录或注册一个演示账号，再发布内容、评论或打赏。");
+    setStatus("请先用手机号登录，再发布内容、评论、上传视频或打赏。");
     return false;
+  }
+
+  function userProfileFromForm(formData) {
+    const phone = platform.normalizePhone(formData.get("phone"));
+    return {
+      id: `phone-${phone}`,
+      name: String(formData.get("name") || "").trim(),
+      phone,
+      role: formData.get("role") || "创作者",
+      rewardQr: String(formData.get("rewardQr") || "").trim(),
+      createdAt: today()
+    };
+  }
+
+  function getCloudConfig() {
+    return window.AI_RESOURCE_CLOUD_CONFIG || {};
+  }
+
+  function isVodConfigured() {
+    const config = getCloudConfig();
+    return Boolean(config.vod?.uploadSignatureUrl && window.TcVod);
+  }
+
+  function updateUploadProgress(percent, label) {
+    if (!els.uploadProgress) return;
+    els.uploadProgress.hidden = false;
+    els.uploadBar.value = percent;
+    els.uploadPercent.textContent = `${percent}%`;
+    els.uploadLabel.textContent = label;
+  }
+
+  function resetUploadProgress() {
+    if (!els.uploadProgress) return;
+    els.uploadProgress.hidden = true;
+    els.uploadBar.value = 0;
+    els.uploadPercent.textContent = "0%";
+    els.uploadLabel.textContent = "等待上传";
+  }
+
+  async function simulateUpload(videoFile, coverFile) {
+    const points = [12, 28, 48, 68, 86, 100];
+    for (const point of points) {
+      updateUploadProgress(point, point < 100 ? "本地演示上传中" : "上传完成");
+      await new Promise((resolve) => window.setTimeout(resolve, 120));
+    }
+
+    return {
+      fileId: `local-${Date.now()}`,
+      appId: "local-demo",
+      mediaUrl: URL.createObjectURL(videoFile),
+      coverUrl: coverFile ? URL.createObjectURL(coverFile) : ""
+    };
+  }
+
+  async function uploadWithVod(videoFile, coverFile) {
+    const config = getCloudConfig();
+    const TcVod = window.TcVod?.default || window.TcVod;
+    const uploader = new TcVod({
+      getSignature() {
+        return fetch(config.vod.uploadSignatureUrl).then((response) => response.text());
+      }
+    });
+    const task = uploader.upload({
+      mediaFile: videoFile,
+      coverFile: coverFile || undefined
+    });
+
+    task.on("media_progress", (info) => {
+      updateUploadProgress(Math.round(Number(info.percent || 0) * 100), "腾讯云点播上传中");
+    });
+
+    const result = await task.done();
+    return {
+      fileId: result.fileId || result.video?.fileId || "",
+      appId: config.vod.appId || result.appId || "",
+      mediaUrl: result.video?.url || result.mediaUrl || result.video?.mediaUrl || "",
+      coverUrl: result.cover?.url || result.coverUrl || ""
+    };
+  }
+
+  async function uploadVideo(formData) {
+    const videoFile = formData.get("videoFile");
+    const coverFile = formData.get("coverFile");
+    platform.validateVideoFile(videoFile);
+    platform.validateCoverFile(coverFile && coverFile.name ? coverFile : null);
+    updateUploadProgress(3, "准备上传");
+
+    if (isVodConfigured()) {
+      return uploadWithVod(videoFile, coverFile && coverFile.name ? coverFile : null);
+    }
+
+    return simulateUpload(videoFile, coverFile && coverFile.name ? coverFile : null);
   }
 
   function renderMember() {
@@ -167,7 +290,7 @@
       els.memberCard.innerHTML = `
         <p class="eyebrow">已登录</p>
         <h3>${escapeHtml(state.user.name)}</h3>
-        <p>${escapeHtml(state.user.role)} · ${escapeHtml(state.user.email)}</p>
+        <p>${escapeHtml(state.user.role)} · ${escapeHtml(state.user.phone)}</p>
         <div class="member-actions">
           <button class="secondary-action" type="button" id="logout-button">退出登录</button>
         </div>
@@ -176,9 +299,9 @@
       els.memberCard.innerHTML = `
         <p class="eyebrow">未登录</p>
         <h3>加入AI学习社区</h3>
-        <p>登录后可以提问、回复、发布视频教程和支持创作者。</p>
+        <p>手机号登录后可以提问、评论、上传视频教程和支持创作者。</p>
         <div class="member-actions">
-          <button class="primary-action" type="button" id="login-button">登录 / 注册</button>
+          <button class="primary-action" type="button" id="login-button">手机号登录 / 注册</button>
         </div>
       `;
     }
@@ -191,22 +314,23 @@
         state.user = null;
         localStorage.removeItem(storageKeys.user);
         renderAll();
-        setStatus("已退出演示账号。");
+        setStatus("已退出账号。");
       });
     }
   }
 
   function renderStats() {
     const comments = state.posts.reduce((total, post) => total + post.comments.length, 0);
+    const publishedVideos = platform.getPublishedVideos(state.videos);
     const tips = [
       ...state.posts.map((post) => post.tips),
-      ...state.videos.map((video) => video.tips)
+      ...publishedVideos.map((video) => video.tips)
     ].reduce((total, value) => total + value, 0);
 
     els.communityStats.innerHTML = `
       <div><span>问题</span><strong>${state.posts.length}</strong></div>
       <div><span>评论</span><strong>${comments}</strong></div>
-      <div><span>视频</span><strong>${state.videos.length}</strong></div>
+      <div><span>公开视频</span><strong>${publishedVideos.length}</strong></div>
       <div><span>演示打赏</span><strong>¥${tips}</strong></div>
     `;
   }
@@ -245,28 +369,40 @@
     `).join("");
   }
 
+  function renderVideoThumb(video) {
+    if (video.coverImage) {
+      return `<img src="${escapeHtml(video.coverImage)}" alt="">`;
+    }
+
+    return `<span>▶</span>`;
+  }
+
   function renderVideos() {
-    els.videoGrid.innerHTML = state.videos.map((video) => `
-      <article class="video-card" data-video-id="${escapeHtml(video.id)}">
-        <div class="video-thumb" aria-hidden="true"><span>▶</span></div>
-        <div class="video-body">
-          <div class="video-meta">
-            <span class="type-pill">${escapeHtml(video.audience)}</span>
-            <span>${escapeHtml(video.creator)}</span>
-            <span>${escapeHtml(video.tool)}</span>
+    const videos = platform.getPublishedVideos(state.videos);
+
+    els.videoGrid.innerHTML = videos.length
+      ? videos.map((video) => `
+        <article class="video-card" data-video-id="${escapeHtml(video.id)}">
+          <div class="video-thumb" aria-hidden="true">${renderVideoThumb(video)}</div>
+          <div class="video-body">
+            <div class="video-meta">
+              <span class="type-pill">${escapeHtml(video.audience)}</span>
+              <span>${escapeHtml(video.creator)}</span>
+              <span>${escapeHtml(video.tool)}</span>
+            </div>
+            <h3>${escapeHtml(video.title)}</h3>
+            <p>${escapeHtml(video.description)}</p>
+            <div class="tip-row">
+              ${video.videoUrl ? `<a class="source-link" href="${escapeHtml(video.videoUrl)}" target="_blank" rel="noreferrer">播放视频</a>` : ""}
+              <button class="tip-button" type="button" data-tip-target="video" data-id="${escapeHtml(video.id)}" data-amount="6">打赏 ¥6</button>
+              <button class="tip-button" type="button" data-tip-target="video" data-id="${escapeHtml(video.id)}" data-amount="18">打赏 ¥18</button>
+              <button class="tip-button" type="button" data-tip-target="video" data-id="${escapeHtml(video.id)}" data-amount="66">打赏 ¥66</button>
+              <span class="category-pill">已支持 ¥${video.tips}</span>
+            </div>
           </div>
-          <h3>${escapeHtml(video.title)}</h3>
-          <p>${escapeHtml(video.description)}</p>
-          <div class="tip-row">
-            ${video.url ? `<a class="source-link" href="${escapeHtml(video.url)}" target="_blank" rel="noreferrer">打开视频</a>` : ""}
-            <button class="tip-button" type="button" data-tip-target="video" data-id="${escapeHtml(video.id)}" data-amount="6">打赏 ¥6</button>
-            <button class="tip-button" type="button" data-tip-target="video" data-id="${escapeHtml(video.id)}" data-amount="18">打赏 ¥18</button>
-            <button class="tip-button" type="button" data-tip-target="video" data-id="${escapeHtml(video.id)}" data-amount="66">打赏 ¥66</button>
-            <span class="category-pill">已支持 ¥${video.tips}</span>
-          </div>
-        </div>
-      </article>
-    `).join("");
+        </article>
+      `).join("")
+      : `<div class="empty-state">还没有审核通过的视频。创作者上传后，需要管理员审核通过才会展示在这里。</div>`;
   }
 
   function renderCreatorDashboard() {
@@ -277,8 +413,8 @@
         <div class="creator-empty">
           <div>
             <p class="eyebrow">创作者中心</p>
-            <h3>登录后查看投稿状态</h3>
-            <p>投稿人发布视频教程后，可以在这里看到审核状态、数据、打赏演示和下一步建议。</p>
+            <h3>手机号登录后上传视频</h3>
+            <p>注册用户可以上传课程视频，提交后会进入管理员审核，审核通过后展示到课程合集。</p>
           </div>
           <button class="primary-action" type="button" data-open-auth>登录 / 注册</button>
         </div>
@@ -287,20 +423,20 @@
       return;
     }
 
-    const myVideos = state.videos.filter((video) => video.creator === state.user.name);
+    const myVideos = platform.getCreatorVideos(state.videos, state.user);
     const totalTips = myVideos.reduce((total, video) => total + Number(video.tips || 0), 0);
     const totalLikes = myVideos.reduce((total, video) => total + Number(video.likes || 0), 0);
     const totalViews = myVideos.reduce((total, video) => total + Number(video.views || 0), 0);
-    const pendingCount = myVideos.filter((video) => getVideoStatus(video) === "待审核").length;
+    const pendingCount = myVideos.filter((video) => platform.getSubmissionStatus(video) === platform.STATUS.PENDING).length;
 
     els.creatorDashboard.innerHTML = `
       <div class="creator-hero">
         <div>
           <p class="eyebrow">创作者工作台</p>
           <h3>${escapeHtml(state.user.name)} 的投稿后台</h3>
-          <p>这里模拟投稿人投稿后看到的界面：状态、表现、打赏和后续服务都集中管理。</p>
+          <p>上传课程视频、查看审核状态、维护打赏二维码。审核通过后，视频才会进入公开课程。</p>
         </div>
-        <button class="secondary-action" type="button" data-focus-video-form>继续投稿</button>
+        <button class="secondary-action" type="button" data-focus-video-form>上传新视频</button>
       </div>
       <div class="creator-metrics">
         <div><span>我的投稿</span><strong>${myVideos.length}</strong></div>
@@ -309,8 +445,8 @@
         <div><span>点赞 / 播放</span><strong>${totalLikes} / ${totalViews}</strong></div>
       </div>
       <div class="creator-next">
-        <strong>下一步</strong>
-        <p>真实上线后，这里可以接入审核结果、收益提现、远程帮助订单和创作者等级。</p>
+        <strong>审核规则</strong>
+        <p>注册用户可直接上传，但视频不会自动公开；管理员通过后才会出现在课程合集和视频教程页面。</p>
       </div>
     `;
 
@@ -323,14 +459,19 @@
         ${
           myVideos.length
             ? myVideos.map(renderCreatorSubmission).join("")
-            : `<div class="empty-state">还没有视频教程。可以先发布一个“注册/安装/基础使用”类教程。</div>`
+            : `<div class="empty-state">还没有视频教程。可以先上传一个“注册 / 安装 / 基础使用”类课程。</div>`
         }
       </section>
     `;
   }
 
   function renderCreatorSubmission(video) {
-    const status = getVideoStatus(video);
+    const status = platform.getSubmissionStatus(video);
+    const note = video.reviewNote ? `<p class="review-note">审核备注：${escapeHtml(video.reviewNote)}</p>` : "";
+    const tags = Array.isArray(video.tags) && video.tags.length
+      ? `<div class="role-tags">${video.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>`
+      : "";
+
     return `
       <article class="creator-submission-card">
         <div>
@@ -341,18 +482,16 @@
           </div>
           <h3>${escapeHtml(video.title)}</h3>
           <p>${escapeHtml(video.description)}</p>
+          ${tags}
+          ${note}
         </div>
         <div class="creator-submission-side">
+          <span>${escapeHtml(video.videoFile?.name || video.videoFileId || "视频已提交")}</span>
           <span>打赏 ¥${Number(video.tips || 0)}</span>
-          <span>点赞 ${Number(video.likes || 0)}</span>
           <span>播放 ${Number(video.views || 0)}</span>
         </div>
       </article>
     `;
-  }
-
-  function getVideoStatus(video) {
-    return video.status || "待审核";
   }
 
   function switchTab(tabName) {
@@ -408,6 +547,30 @@
     setStatus(`${currentName()} 已模拟打赏 ¥${amount}。真实上线时这里会进入支付订单流程。`);
   }
 
+  function sendPhoneCode() {
+    try {
+      const phone = platform.normalizePhone(els.authForm.elements.phone.value);
+      const record = {
+        phone,
+        code: "123456",
+        expiresAt: Date.now() + 10 * 60 * 1000
+      };
+      save(storageKeys.phoneCode, record);
+      setStatus("验证码已发送。演示环境请输入 123456；上线后这里会调用 CloudBase 手机验证码。");
+    } catch (error) {
+      setStatus(error.message);
+    }
+  }
+
+  function verifyPhoneCode(phone, code) {
+    const record = load(storageKeys.phoneCode, null);
+    if (!record || record.phone !== phone || record.expiresAt < Date.now()) {
+      return code === "123456";
+    }
+
+    return record.code === code;
+  }
+
   function bindEvents() {
     document.querySelectorAll("[data-community-tab]").forEach((button) => {
       button.addEventListener("click", () => switchTab(button.dataset.communityTab));
@@ -429,19 +592,28 @@
       button.addEventListener("click", closeAuthModal);
     });
 
+    els.sendCode?.addEventListener("click", sendPhoneCode);
+
     els.authForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const formData = new FormData(els.authForm);
-      state.user = {
-        name: formData.get("name").trim(),
-        email: formData.get("email").trim(),
-        role: formData.get("role")
-      };
-      save(storageKeys.user, state.user);
-      closeAuthModal();
-      renderAll();
-      setStatus(`欢迎 ${state.user.name}，现在可以参与社区互动了。`);
-      els.authForm.reset();
+      try {
+        const formData = new FormData(els.authForm);
+        const user = userProfileFromForm(formData);
+        const code = String(formData.get("code") || "").trim();
+        if (!verifyPhoneCode(user.phone, code)) {
+          setStatus("验证码不正确，请重新输入。");
+          return;
+        }
+
+        state.user = user;
+        save(storageKeys.user, state.user);
+        closeAuthModal();
+        renderAll();
+        setStatus(`欢迎 ${state.user.name}，现在可以进入创作者中心上传视频。`);
+        els.authForm.reset();
+      } catch (error) {
+        setStatus(error.message);
+      }
     });
 
     els.questionForm.addEventListener("submit", (event) => {
@@ -466,29 +638,53 @@
       setStatus("问题已发布到问答广场。");
     });
 
-    els.videoForm.addEventListener("submit", (event) => {
+    els.videoForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!requireLogin()) return;
-      const formData = new FormData(els.videoForm);
-      state.videos.unshift({
-        id: `video-${Date.now()}`,
-        title: formData.get("title").trim(),
-        creator: state.user.name,
-        audience: formData.get("audience"),
-        tool: "创作者投稿",
-        description: formData.get("description").trim(),
-        url: formData.get("url").trim(),
-        status: "待审核",
-        createdAt: today(),
-        views: 0,
-        tips: 0,
-        likes: 0
-      });
-      save(storageKeys.videos, state.videos);
-      els.videoForm.reset();
-      renderAll();
-      switchTab("creator");
-      setStatus("投稿已提交，当前为待审核状态。");
+
+      const submitButton = els.videoForm.querySelector("button[type='submit']");
+      submitButton.disabled = true;
+
+      try {
+        const formData = new FormData(els.videoForm);
+        const uploadResult = await uploadVideo(formData);
+        const backupUrl = String(formData.get("url") || "").trim();
+        const submission = platform.createVideoSubmission({
+          title: formData.get("title"),
+          creator: state.user,
+          audience: formData.get("audience"),
+          tool: formData.get("tool"),
+          tags: formData.get("tags"),
+          description: formData.get("description"),
+          videoFile: formData.get("videoFile"),
+          coverFile: formData.get("coverFile"),
+          vod: {
+            fileId: uploadResult.fileId,
+            appId: uploadResult.appId,
+            mediaUrl: uploadResult.mediaUrl || backupUrl
+          },
+          cover: {
+            url: uploadResult.coverUrl
+          },
+          localVideoUrl: uploadResult.mediaUrl
+        });
+
+        if (backupUrl && !submission.videoUrl) {
+          submission.videoUrl = backupUrl;
+        }
+
+        state.videos.unshift(submission);
+        save(storageKeys.videos, state.videos);
+        els.videoForm.reset();
+        resetUploadProgress();
+        renderAll();
+        switchTab("creator");
+        setStatus("视频已上传并提交审核。管理员通过后，才会进入公开课程。");
+      } catch (error) {
+        setStatus(error.message || "上传失败，请稍后重试。");
+      } finally {
+        submitButton.disabled = false;
+      }
     });
 
     els.feed.addEventListener("submit", (event) => {

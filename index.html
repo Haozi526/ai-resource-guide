@@ -9,10 +9,13 @@
     <meta property="og:title" content="AI教材资源导航">
     <meta property="og:description" content="AI工具百科、课程合集、岗位AI使用指南，一站式整理。">
     <meta property="og:type" content="website">
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="content-data.js"></script>
-    <script defer src="app.js"></script>
-    <script defer src="community.js"></script>
+    <meta property="og:image" content="assets/hero-ai-resource-map.png">
+    <link rel="stylesheet" href="styles.css?v=creator-upload-1">
+    <script defer src="content-data.js?v=creator-upload-1"></script>
+    <script defer src="cloudbase-config.js?v=creator-upload-1"></script>
+    <script defer src="creator-platform.js?v=creator-upload-1"></script>
+    <script defer src="app.js?v=creator-upload-1"></script>
+    <script defer src="community.js?v=creator-upload-1"></script>
   </head>
   <body>
     <a class="skip-link" href="#tools">跳到工具库</a>
@@ -219,8 +222,31 @@
                     </label>
                   </div>
                   <label>
-                    <span>视频链接</span>
-                    <input name="url" type="url" placeholder="粘贴B站、抖音、视频号或网盘链接">
+                    <span>使用工具</span>
+                    <input name="tool" type="text" placeholder="例如：Kimi、豆包、剪映AI、Runway" required>
+                  </label>
+                  <label>
+                    <span>分类标签</span>
+                    <input name="tags" type="text" placeholder="例如：注册教程,电气机械,提示词">
+                  </label>
+                  <div class="field-row">
+                    <label>
+                      <span>上传视频 MP4</span>
+                      <input name="videoFile" type="file" accept="video/mp4,.mp4" required>
+                    </label>
+                    <label>
+                      <span>课程封面图</span>
+                      <input name="coverFile" type="file" accept="image/png,image/jpeg,image/webp">
+                    </label>
+                  </div>
+                  <div class="upload-progress" id="creator-upload-progress" hidden>
+                    <div><span id="creator-upload-label">等待上传</span><strong id="creator-upload-percent">0%</strong></div>
+                    <progress id="creator-upload-bar" value="0" max="100"></progress>
+                  </div>
+                  <p class="field-hint">视频会先上传到腾讯云点播；未配置腾讯云时会使用本地演示上传，提交后进入待审核。</p>
+                  <label>
+                    <span>备用视频链接</span>
+                    <input name="url" type="url" placeholder="可选：B站、网盘或其他备用链接">
                   </label>
                   <label>
                     <span>视频简介</span>
@@ -309,15 +335,27 @@
         <div class="modal-body">
           <p class="eyebrow">社区账号</p>
           <h2 id="auth-title">登录或注册</h2>
-          <p class="modal-summary">演示版只在本机保存昵称和身份，真实上线需要后端账号系统。</p>
+          <p class="modal-summary">输入手机号和验证码进入社区。未配置腾讯云时，本地演示验证码为 123456。</p>
           <form class="auth-form" id="auth-form">
             <label>
               <span>昵称</span>
               <input name="name" type="text" placeholder="例如：AI学习者" required>
             </label>
             <label>
-              <span>邮箱</span>
-              <input name="email" type="email" placeholder="name@example.com" required>
+              <span>手机号</span>
+              <input name="phone" type="tel" inputmode="numeric" placeholder="13800138000" required>
+            </label>
+            <div class="auth-code-row">
+              <label>
+                <span>验证码</span>
+                <input name="code" type="text" inputmode="numeric" placeholder="123456" required>
+              </label>
+              <button class="secondary-action" type="button" id="send-phone-code">发送验证码</button>
+            </div>
+            <p class="field-hint">上线后可接入 CloudBase 手机验证码登录；当前可先用演示验证码测试流程。</p>
+            <label>
+              <span>打赏二维码图片链接</span>
+              <input name="rewardQr" type="url" placeholder="可先留空，审核后再展示">
             </label>
             <label>
               <span>身份</span>
@@ -343,4 +381,3 @@
     </footer>
   </body>
 </html>
-

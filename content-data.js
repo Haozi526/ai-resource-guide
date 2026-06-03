@@ -1282,6 +1282,7 @@ window.AI_RESOURCE_DATA = {
       risks: ["不能把AI输出当作正式法律或税务意见", "法规时效、地区口径和合同原文必须人工核验", "涉及客户、合同和财务数据要做脱敏处理"]
     }
   ],
+  videoSubmissions: [],
   comparisons: [
     {
       title: "ChatGPT vs Claude",

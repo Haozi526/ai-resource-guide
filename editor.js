@@ -1,6 +1,8 @@
 (function () {
+  const platform = window.AI_CREATOR_PLATFORM;
   const storageKey = "aiResourceEditorData";
   const adminSessionKey = "aiResourceAdminSession";
+  const communityVideoStorageKey = "aiResourceCommunityVideos";
   const adminUser = "admin";
   const adminPasswordHash = "dd4fa27e";
 
@@ -8,6 +10,7 @@
     tools: "AI工具",
     industries: "专业行业",
     tutorials: "课程教程",
+    videoSubmissions: "视频审核",
     routes: "岗位路线",
     comparisons: "工具对比"
   };
@@ -54,6 +57,23 @@
       ["steps", "步骤", "list"],
       ["updatedAt", "最后更新", "date"]
     ],
+    videoSubmissions: [
+      ["id", "投稿ID", "text"],
+      ["title", "视频标题", "text"],
+      ["creator", "创作者", "text"],
+      ["creatorPhone", "手机号", "text"],
+      ["audience", "适合人群", "text"],
+      ["tool", "使用工具", "text"],
+      ["tags", "分类标签", "list"],
+      ["description", "视频简介", "textarea"],
+      ["videoFileId", "腾讯云VOD FileId", "text"],
+      ["videoAppId", "腾讯云VOD AppId", "text"],
+      ["videoUrl", "视频播放地址", "url"],
+      ["coverImage", "封面图", "url"],
+      ["status", "审核状态", "text"],
+      ["reviewNote", "审核备注", "textarea"],
+      ["createdAt", "投稿日期", "date"]
+    ],
     routes: [
       ["id", "唯一ID", "text"],
       ["title", "路线标题", "text"],
@@ -71,7 +91,7 @@
   };
 
   const state = {
-    data: loadPreviewData() || structuredClone(window.AI_RESOURCE_DATA),
+    data: prepareEditorData(loadPreviewData() || structuredClone(window.AI_RESOURCE_DATA)),
     collection: "tools",
     selectedIndex: 0,
     query: ""
@@ -105,6 +125,41 @@
     } catch (error) {
       return null;
     }
+  }
+
+  function prepareEditorData(data) {
+    const next = data || {};
+    const communityVideos = loadCommunityVideos();
+    next.videoSubmissions = Array.isArray(next.videoSubmissions)
+      ? mergeVideoSubmissions(next.videoSubmissions, communityVideos)
+      : communityVideos;
+    return next;
+  }
+
+  function loadCommunityVideos() {
+    try {
+      const raw = storageGet(communityVideoStorageKey);
+      const items = raw ? JSON.parse(raw) : window.AI_RESOURCE_DATA?.videoSubmissions;
+      return Array.isArray(items) ? items : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function mergeVideoSubmissions(primary, secondary) {
+    const merged = [...primary];
+    const ids = new Set(merged.map((item) => item.id));
+    secondary.forEach((item) => {
+      if (item?.id && !ids.has(item.id)) {
+        merged.push(item);
+        ids.add(item.id);
+      }
+    });
+    return merged;
+  }
+
+  function syncVideoSubmissions() {
+    storageSet(communityVideoStorageKey, JSON.stringify(state.data.videoSubmissions || []));
   }
 
   function getStorage() {
@@ -274,7 +329,10 @@
       return;
     }
 
-    els.form.innerHTML = schema.map(([key, label, type]) => renderField(item, key, label, type)).join("");
+    els.form.innerHTML = [
+      state.collection === "videoSubmissions" ? renderVideoReviewPanel(item) : "",
+      schema.map(([key, label, type]) => renderField(item, key, label, type)).join("")
+    ].join("");
 
     els.form.querySelectorAll("input, textarea, select").forEach((field) => {
       field.addEventListener("input", () => {
@@ -286,6 +344,39 @@
         saveFormToState();
         renderList();
       });
+    });
+
+    bindVideoReviewActions();
+  }
+
+  function renderVideoReviewPanel(item) {
+    const status = item.status || "待审核";
+    const hasPlayableVideo = item.videoUrl || item.localVideoUrl;
+    return `
+      <div class="video-review-panel is-wide">
+        <div>
+          <p class="eyebrow">视频审核</p>
+          <h3>${escapeHtml(item.title || "未命名视频")}</h3>
+          <p>当前状态：<strong>${escapeHtml(status)}</strong>。通过后会自动生成课程，并出现在课程合集。</p>
+        </div>
+        ${hasPlayableVideo ? `
+          <video class="review-video" src="${escapeHtml(item.videoUrl || item.localVideoUrl)}" controls preload="metadata"></video>
+        ` : `
+          <div class="empty-state">当前投稿没有可直接播放的视频地址。若已上传到腾讯云点播，请填写 FileId / AppId 或播放地址。</div>
+        `}
+        <div class="editor-review-actions">
+          <button class="primary-action" type="button" data-review-action="approve">通过并生成课程</button>
+          <button class="secondary-action" type="button" data-review-action="reject">驳回修改</button>
+          <button class="secondary-action danger-action" type="button" data-review-action="offline">下架</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindVideoReviewActions() {
+    if (state.collection !== "videoSubmissions") return;
+    els.form.querySelectorAll("[data-review-action]").forEach((button) => {
+      button.addEventListener("click", () => handleVideoReview(button.dataset.reviewAction));
     });
   }
 
@@ -347,6 +438,72 @@
     });
   }
 
+  function handleVideoReview(action) {
+    if (!platform) {
+      setStatus("缺少创作者平台模块，无法审核视频。");
+      return;
+    }
+
+    saveFormToState();
+    const item = currentItem();
+    if (!item) return;
+
+    if (action === "approve") {
+      const approved = platform.approveVideoSubmission(item, {
+        reviewer: "admin",
+        note: item.reviewNote || "审核通过"
+      });
+      replaceCurrentItem(approved);
+      addTutorialFromVideo(approved);
+      persistEditorState();
+      setStatus("视频已通过审核，并已加入课程合集。");
+      renderAll();
+      return;
+    }
+
+    if (action === "reject") {
+      const note = window.prompt("请输入驳回原因", item.reviewNote || "请补充更清晰的标题、封面或课程说明。");
+      if (note === null) return;
+      replaceCurrentItem(platform.rejectVideoSubmission(item, { reviewer: "admin", note }));
+      persistEditorState();
+      setStatus("已驳回视频，创作者可在创作者中心看到备注。");
+      renderAll();
+      return;
+    }
+
+    if (action === "offline") {
+      const note = window.prompt("请输入下架原因", item.reviewNote || "内容已下架。");
+      if (note === null) return;
+      replaceCurrentItem(platform.offlineVideoSubmission(item, { reviewer: "admin", note }));
+      persistEditorState();
+      setStatus("视频已下架，不会继续公开展示。");
+      renderAll();
+    }
+  }
+
+  function replaceCurrentItem(nextItem) {
+    currentItems()[state.selectedIndex] = nextItem;
+  }
+
+  function addTutorialFromVideo(video) {
+    const tutorials = state.data.tutorials || [];
+    const exists = tutorials.some((item) => {
+      return (video.videoFileId && item.videoFileId === video.videoFileId) || item.sourceVideoId === video.id;
+    });
+    if (exists) return;
+
+    const tutorial = platform.createTutorialFromApprovedVideo(video);
+    tutorial.sourceVideoId = video.id;
+    tutorials.unshift(tutorial);
+    state.data.tutorials = tutorials;
+  }
+
+  function persistEditorState() {
+    state.data.updatedAt = new Date().toISOString().slice(0, 10);
+    syncVideoSubmissions();
+    storageSet(storageKey, JSON.stringify(state.data));
+  }
+
   function createBlankItem() {
     const today = new Date().toISOString().slice(0, 10);
     const role = state.data.roles?.[0]?.id || "student";
@@ -369,6 +526,30 @@
         alternatives: [],
         updatedAt: today,
         sourceName: "官方主页"
+      };
+    }
+
+    if (state.collection === "videoSubmissions") {
+      return {
+        id: `video-${Date.now()}`,
+        title: "新的创作者视频",
+        creatorId: "manual-creator",
+        creator: "创作者",
+        creatorPhone: "",
+        audience: "通用",
+        tool: "AI工具",
+        tags: ["教程"],
+        description: "填写课程简介、适合人群和可以学到的内容。",
+        videoFileId: "",
+        videoAppId: "",
+        videoUrl: "",
+        coverImage: "",
+        status: "待审核",
+        reviewNote: "",
+        createdAt: today,
+        views: 0,
+        tips: 0,
+        likes: 0
       };
     }
 
@@ -459,13 +640,13 @@
 
   function savePreview() {
     saveFormToState();
-    state.data.updatedAt = new Date().toISOString().slice(0, 10);
-    storageSet(storageKey, JSON.stringify(state.data));
+    persistEditorState();
     setStatus("已保存到本机预览，返回前台即可查看。");
   }
 
   function exportData() {
     saveFormToState();
+    syncVideoSubmissions();
     const content = `window.AI_RESOURCE_DATA = ${JSON.stringify(state.data, null, 2)};\n`;
     const blob = new Blob([content], { type: "text/javascript;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -483,7 +664,7 @@
     const ok = window.confirm("确定清除本机预览数据，恢复读取原始内容吗？");
     if (!ok) return;
     storageRemove(storageKey);
-    state.data = structuredClone(window.AI_RESOURCE_DATA);
+    state.data = prepareEditorData(structuredClone(window.AI_RESOURCE_DATA));
     state.selectedIndex = 0;
     renderAll();
     setStatus("已清除本机预览。");
